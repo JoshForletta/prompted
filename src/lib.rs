@@ -1,3 +1,3 @@
 mod prompt;
-pub mod component;
+pub mod components;
 pub use prompt::Prompt;
