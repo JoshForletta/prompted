@@ -3,6 +3,9 @@ use std::fmt::Display;
 use serde_json::Value;
 
 pub mod logname;
+pub mod hostname;
+pub mod path;
+pub mod git;
 
 #[derive(Default)]
 pub struct NoComponent {}

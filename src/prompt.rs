@@ -3,7 +3,9 @@ use std::{collections::HashMap, error::Error, fs::File, ops::Index};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
-use crate::components::{logname::Logname, Component, NoComponent};
+use crate::components::{
+    git::Git, hostname::Hostname, logname::Logname, path::Path, Component, NoComponent,
+};
 
 #[derive(Default, Serialize, Deserialize)]
 pub struct Config {
@@ -25,6 +27,9 @@ impl Prompt {
         };
 
         p.add_component(Box::new(Logname::new()));
+        p.add_component(Box::new(Hostname::new()));
+        p.add_component(Box::new(Path::new()));
+        p.add_component(Box::new(Git::new()));
 
         p
     }
