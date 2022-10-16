@@ -1,10 +1,17 @@
 use std::fmt::Write;
 
+use log::{error};
+
 use prompted::Prompt;
 
+
 fn main() {
+    simple_logger::init();
+
     let mut prompt = Prompt::new();
-    prompt.load_config("test.json");
+    if let Err(e) = prompt.load_config("test_config.json") {
+        error!("Failed loading config: {}", e);
+    };
 
     let mut buf = String::with_capacity(100);
 

@@ -1,11 +1,52 @@
 use std::fmt::Display;
 
+use serde::{Serialize, Deserialize};
 use serde_json::Value;
 
-pub mod logname;
-pub mod hostname;
-pub mod path;
 pub mod git;
+pub mod hostname;
+pub mod logname;
+pub mod path;
+
+pub static SGR_RESET: &str = "\x1b[m";
+
+#[derive(Clone, Copy, Debug, Serialize, Deserialize)]
+#[serde(untagged)]
+pub enum Color {
+    C8(u8),
+    C24(u8, u8, u8),
+}
+
+#[derive(Default, Debug)]
+pub struct Sgr {
+    pub foreground: Option<Color>,
+    pub bold: Option<bool>,
+}
+
+impl Display for Sgr {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let mut params: Vec<u8> = Vec::new();
+
+        if let Some(color) = &self.foreground {
+            match color {
+                Color::C8(c) => params.extend_from_slice(&[38, 5, *c]),
+                Color::C24(r, g, b) => params.extend_from_slice(&[38, 2, *r, *g, *b]),
+            };
+        }
+
+        if let Some(bold) = self.bold {
+            match bold {
+                true => params.push(5),
+                false => params.push(21),
+            }
+        }
+
+        let params: Vec<String> = params.iter().map(|p| p.to_string()).collect();
+        let params = params.join(";");
+
+        write!(f, "\x1b[{params}m")
+    }
+}
 
 #[derive(Default)]
 pub struct NoComponent {}
@@ -32,5 +73,5 @@ where
         false
     }
 
-    fn load_config(&mut self, config: Value) {}
+    fn load_config(&mut self, _config: Value) {}
 }

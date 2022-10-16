@@ -15,7 +15,7 @@ pub struct Config {
 pub struct Prompt {
     no_component: Box<dyn Component>,
     pub components: HashMap<String, Box<dyn Component>>,
-    pub config: Config,
+    pub config: HashMap<String, Value>,
 }
 
 impl Prompt {
@@ -37,7 +37,11 @@ impl Prompt {
     pub fn load_config(&mut self, path: &str) -> Result<(), Box<dyn Error>> {
         let file = File::open(path)?;
 
-        self.config = serde_json::from_reader(&file).unwrap_or(Default::default());
+        self.config = serde_json::from_reader(&file)?;
+
+        for (cid, c) in &mut self.components {
+            c.load_config(self.config.remove(cid).unwrap_or(Value::Null));
+        }
 
         Ok(())
     }
