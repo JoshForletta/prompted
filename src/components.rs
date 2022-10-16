@@ -2,6 +2,7 @@ use std::fmt::Display;
 
 use serde::{Serialize, Deserialize};
 use serde_json::Value;
+use log::error;
 
 pub mod git;
 pub mod hostname;
@@ -73,5 +74,5 @@ where
         false
     }
 
-    fn load_config(&mut self, _config: Value) {}
+    fn load_config(&mut self,  _config: Value) {}
 }
