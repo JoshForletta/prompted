@@ -1,8 +1,4 @@
-use std::{
-    env,
-    fmt::Display,
-    path::{Display as IoDisplay, PathBuf},
-};
+use std::{env, fmt::Display, path::PathBuf};
 
 use log::error;
 use serde::{Deserialize, Serialize};

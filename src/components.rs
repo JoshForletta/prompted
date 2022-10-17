@@ -1,6 +1,5 @@
 use std::fmt::Display;
 
-use log::error;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
