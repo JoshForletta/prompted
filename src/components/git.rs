@@ -1,13 +1,38 @@
 use std::fmt::Display;
 
 use git_status_parser::{EntryStatus, GitStatus};
+use log::error;
+use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use subprocess::Exec;
 
-use crate::components::Component;
+use crate::components::{Color, Component, Sgr, SGR_RESET};
+
+#[derive(Debug, Default, Serialize, Deserialize)]
+pub struct CountConfig {
+    symbol: Option<String>,
+    foreground: Option<Color>,
+    bold: Option<bool>,
+}
+
+#[derive(Debug, Default, Serialize, Deserialize)]
+pub struct BranchConfig {
+    dirty: Option<Color>,
+    clean: Option<Color>,
+    bold: Option<bool>,
+}
+
+#[derive(Debug, Default, Serialize, Deserialize)]
+pub struct GitConfig {
+    branch: Option<BranchConfig>,
+    staged: Option<CountConfig>,
+    unstaged: Option<CountConfig>,
+    untracked: Option<CountConfig>,
+}
 
 #[derive(Default)]
 pub struct Git {
+    config: GitConfig,
     branch: String,
     staged: i32,
     unstaged: i32,
@@ -49,17 +74,44 @@ impl Git {
 
 impl Display for Git {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{} ", self.branch)?;
+        if let Some(bc) = &self.config.branch {
+            let sgr = Sgr {
+                foreground: if (self.unstaged + self.untracked + self.staged) > 0 {
+                    bc.dirty
+                } else {
+                    bc.clean
+                },
+                bold: bc.bold,
+            };
+            write!(f, "{sgr}{}{SGR_RESET} ", self.branch)?;
+        } else {
+            write!(f, "{} ", self.branch)?;
+        }
 
-        if self.staged > 0 {
-            write!(f, "{}[:] ", self.staged)?;
-        }
-        if self.unstaged > 0 {
-            write!(f, "{}[!] ", self.unstaged)?;
-        }
-        if self.untracked > 0 {
-            write!(f, "{}[?] ", self.untracked)?;
-        }
+        let mut fmt_count = |c: i32, cc: &Option<CountConfig>| {
+            if c > 0 {
+                match cc {
+                    Some(cc) => {
+                        let s = String::new();
+                        let symbol = match &cc.symbol {
+                            Some(s) => s,
+                            None => &s,
+                        };
+                        let sgr = Sgr {
+                            foreground: cc.foreground,
+                            bold: cc.bold,
+                        };
+                        write!(f, "{sgr}{c}{}{SGR_RESET}", symbol)
+                    }
+                    None => write!(f, "{c}"),
+                }?
+            }
+            Ok(())
+        };
+
+        fmt_count(self.staged, &self.config.staged)?;
+        fmt_count(self.unstaged, &self.config.unstaged)?;
+        fmt_count(self.untracked, &self.config.untracked)?;
 
         Ok(())
     }
@@ -74,5 +126,13 @@ impl Component for Git {
         true
     }
 
-    fn load_config(&mut self, config: Value) {}
+    fn load_config(&mut self, config: Value) {
+        if config == Value::Null {
+            return;
+        }
+        self.config = serde_json::from_value(config).unwrap_or_else(|e| {
+            error!("Failed parsing git config: {}", e);
+            Default::default()
+        });
+    }
 }
