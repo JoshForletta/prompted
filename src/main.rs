@@ -1,9 +1,8 @@
 use std::fmt::Write;
 
-use log::{error};
+use log::error;
 
 use prompted::Prompt;
-
 
 fn main() {
     simple_logger::init();
